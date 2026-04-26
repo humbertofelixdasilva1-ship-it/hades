@@ -1,0 +1,1835 @@
+<!DOCTYPE html>  
+<html lang="pt-BR">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Hades Football Simulator</title>  
+    <style>  
+        :root { --bg: #0d0d12; --main: #a200ff; --dark-main: #4c007a; --text: #ffffff; --glass: rgba(255,255,255,0.05); }  
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent;}
+        html, body { max-width: 100%; overflow-x: hidden; }
+        body { background-color: var(--bg); color: var(--text); padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: background-image 0.4s ease;}
+
+        /* Fundo dinâmico por seção - imagem + overlay escuro pra legibilidade */
+        body[data-bg="1"] { background-image: linear-gradient(rgba(13,13,18,0.55), rgba(13,13,18,0.78)), url('/static/img/bg1.jpg'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;}
+        body[data-bg="2"] { background-image: linear-gradient(rgba(13,13,18,0.55), rgba(13,13,18,0.78)), url('/static/img/bg2.jpg'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;}
+        body[data-bg="3"] { background-image: linear-gradient(rgba(13,13,18,0.55), rgba(13,13,18,0.78)), url('/static/img/bg3.jpg'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;}
+        body[data-bg="4"] { background-image: linear-gradient(rgba(13,13,18,0.55), rgba(13,13,18,0.78)), url('/static/img/bg4.jpg'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;}
+        .header-title { text-align: center; margin-top: 20px; margin-bottom: 5px; font-size: 1.8rem; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--main);}  
+        .header-sub { text-align: center; font-size: 0.75rem; color: #888; margin-bottom: 25px; font-style: italic; }  
+          
+        nav { display: flex; gap: 8px; width: 100%; max-width: 800px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch;}
+        nav::-webkit-scrollbar { height: 4px; }
+        nav::-webkit-scrollbar-thumb { background: var(--main); border-radius: 2px; }
+        button { background: var(--glass); color: white; border: 1px solid var(--main); padding: 10px; border-radius: 5px; cursor: pointer; flex: 1; min-width: 100px; font-weight: bold; transition: 0.2s; font-size: 0.95rem;}
+        button:hover { background: var(--main); color: white; box-shadow: 0 0 10px var(--main); }  
+        button.action-btn { background: var(--dark-main); border: none; margin-top: 10px; padding: 12px; width: 100%; font-size: 1.05rem; box-shadow: 0 0 10px var(--dark-main);}
+        button.danger-btn { background: #ff003c; box-shadow: 0 0 10px #ff003c; border:none; }  
+        button.info-btn { background: #005f73; border: 1px solid #00e5ff; font-size: 0.9rem; margin-top: 8px;}  
+          
+        .container { width: 100%; max-width: 800px; background: var(--glass); padding: 20px; border-radius: 10px; border: 1px solid rgba(162, 0, 255, 0.2); margin-bottom: 20px;}  
+        .section { display: none; } .section.active { display: block; animation: fadeIn 0.3s; }  
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }  
+
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid var(--main); background: rgba(0,0,0,0.5); color: white; font-size: 16px;}
+          
+        .grid-teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;}  
+        .card { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 5px; text-align: center; border-left: 3px solid var(--main); font-size: 0.9rem;}  
+          
+        .match-card { background: rgba(0,0,0,0.6); padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; text-align: center;}  
+        .match-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; gap: 8px;}
+        .match-header .team-name { flex:1; min-width:0; word-break: break-word; }
+        .match-header .score { padding:0 10px; color: var(--main); font-size: 1.4rem; white-space: nowrap; }
+          
+        .group-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center; font-size: 0.9rem;}  
+        .group-table th { color: var(--main); padding: 5px; border-bottom: 1px solid var(--main); }  
+        .group-table td { padding: 5px; border-bottom: 1px solid #333; }  
+          
+        .stats-list { list-style: none; margin-bottom: 20px;}  
+        .stats-list li { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333; gap:8px;}
+        .stats-list li span { min-width: 0; word-break: break-word;}
+        .roster-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }  
+        .roster-grid input { margin-bottom: 0; padding: 8px; font-size: 0.85rem;}  
+
+        .ratings-cols { display:flex; gap:15px; }
+        .event-tag { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.7rem; font-weight:bold; margin-left:4px; vertical-align:middle;}
+        .tag-p { background:#ff8800; color:#000;}
+        .tag-f { background:#00bcd4; color:#000;}
+        .card-yellow { display:inline-block; width:11px; height:14px; background:#ffd700; border-radius:2px; vertical-align:middle; margin-right:6px; box-shadow:0 0 3px #ffd700;}
+        .card-red { display:inline-block; width:11px; height:14px; background:#ff003c; border-radius:2px; vertical-align:middle; margin-right:6px; box-shadow:0 0 3px #ff003c;}
+          
+        /* Modal de Detalhes da Partida */  
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 10px;}
+        .modal-content { background: var(--bg); border: 1px solid var(--main); border-radius: 10px; width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
+        .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #ff003c; font-weight: bold; font-size: 1.8rem; line-height: 1;}
+
+        /* Overlay de Login / Escolha de Painel */
+        .overlay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(13,13,18,0.55), rgba(13,13,18,0.78)), url('/static/img/bg1.jpg') center/cover no-repeat; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px;}
+        .login-box { background: var(--glass); padding: 30px; border-radius: 10px; border: 1px solid var(--main); text-align: center; width: 100%; max-width: 400px; box-shadow: 0 0 20px rgba(162,0,255,0.3); }
+        .login-box input { background: rgba(0,0,0,0.6); }
+
+        /* Bettor panel */
+        .bettor-header { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 16px; background: rgba(0,0,0,0.5); border:1px solid #00e5ff; border-radius:8px; margin-bottom:15px; flex-wrap:wrap;}
+        .hcoins-badge { background:#00e5ff; color:#000; padding:6px 14px; border-radius:20px; font-weight:900; box-shadow:0 0 10px #00e5ff; font-size:1.05rem;}
+        .bettor-camp-card { background: rgba(0,0,0,0.5); padding:14px; border-radius:8px; border:1px solid #00e5ff; margin-bottom:10px; cursor:pointer; transition:0.2s;}
+        .bettor-camp-card:hover { background: rgba(0,229,255,0.08); transform: translateY(-1px);}
+        .bet-match-card { background:rgba(0,0,0,0.55); padding:12px; border-radius:8px; border:1px solid #333; margin-bottom:10px;}
+        .odds-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+        .odd-btn { flex:1; min-width:62px; padding:8px 4px; border-radius:5px; background:rgba(0,229,255,0.1); border:1px solid #00e5ff; cursor:pointer; color:#fff; font-weight:bold; transition:0.15s; text-align:center; font-size:0.85rem;}
+        .odd-btn:hover { background:#00e5ff; color:#000; box-shadow:0 0 8px #00e5ff;}
+        .odd-btn.selected { background:#00e5ff; color:#000; box-shadow:0 0 10px #00e5ff;}
+        .odd-label { display:block; font-size:0.65rem; opacity:0.85; font-weight:normal;}
+        .bet-section-label { font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:10px; margin-bottom:3px;}
+        .bet-row { background: rgba(0,0,0,0.45); padding:10px 12px; border-radius:6px; border-left:3px solid #00e5ff; margin-bottom:8px; font-size:0.85rem;}
+        .bet-row.won { border-left-color:#0fff8a;}
+        .bet-row.lost { border-left-color:#ff003c; opacity:0.75;}
+        .bet-row.pending { border-left-color:#ffd700;}
+        .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:bold; margin-left:6px;}
+        .status-pending { background:#ffd700; color:#000;}
+        .status-won { background:#0fff8a; color:#000;}
+        .status-lost { background:#ff003c; color:#fff;}
+        .betting-toggle-card { background:rgba(0,0,0,0.5); padding:12px; border-radius:8px; border:1px solid #00e5ff; margin: 10px 0; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+
+        /* MOBILE */
+        @media (max-width: 600px) {
+            body { padding: 6px; }
+            .header-title { font-size: 1.3rem; letter-spacing: 1px; margin-top: 10px;}
+            .header-sub { font-size: 0.7rem; margin-bottom: 15px;}
+            .container { padding: 14px; border-radius: 8px;}
+            nav { gap: 6px; }
+            button { min-width: 90px; padding: 9px 8px; font-size: 0.85rem;}
+            button.action-btn { font-size: 0.95rem; padding: 11px;}
+            h2 { font-size: 1.15rem; }
+            h3 { font-size: 1rem; }
+            h4 { font-size: 0.9rem; }
+            .grid-teams { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;}
+            .card { padding: 8px; font-size: 0.8rem;}
+            .match-card { padding: 12px; }
+            .match-header { font-size: 0.95rem; gap: 4px;}
+            .match-header .score { font-size: 1.15rem; padding: 0 6px;}
+            .group-table { font-size: 0.78rem;}
+            .group-table th, .group-table td { padding: 4px 2px;}
+            .roster-grid { grid-template-columns: repeat(2, 1fr); gap: 6px;}
+            .roster-grid input { padding: 7px; font-size: 0.8rem;}
+            .stats-list li { font-size: 0.85rem; }
+            .modal { padding: 4px; }
+            .modal-content { padding: 15px; max-height: 96vh; border-radius: 6px;}
+            .ratings-cols { flex-direction: column; gap: 12px;}
+        }
+    </style>
+</head>  
+<body data-bg="1">  
+<div id="chooseScreen" class="overlay-screen">
+    <div class="login-box">
+        <h2 style="color:var(--main); margin-bottom:8px; font-weight:900;">HADES FOOTBALL</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:25px;">Escolha o painel para entrar</p>
+        <button class="action-btn" onclick="showAdminLogin()" style="margin-bottom:12px;">🛡️ Painel Admin</button>
+        <button class="action-btn" onclick="showBettorAuth()" style="background:#005f73; box-shadow:0 0 10px #00e5ff; margin-bottom:12px;">🎲 Painel de Apostador</button>
+        <button class="action-btn" onclick="showPlayerAuth()" style="background:#3a005f; box-shadow:0 0 10px #b14bff; margin-bottom:12px;">⚽️ Painel de Jogador</button>
+        <button onclick="openPublicHSocial()" style="background:transparent; border:1px solid #b14bff; color:#b14bff; width:100%;">🌐 Ver HSocial (público)</button>
+    </div>
+</div>
+
+<div id="loginScreen" class="overlay-screen" style="display:none;">
+    <div class="login-box">
+        <h2 style="color:var(--main); margin-bottom:20px; font-weight:900;">LOGIN DE ADMIN</h2>
+        <input type="text" id="lUser" placeholder="Usuário">
+        <input type="password" id="lPass" placeholder="Senha">
+        <button class="action-btn" onclick="doAdminLogin()">Entrar no Sistema</button>
+        <button onclick="backToChoose()" style="background:transparent; border:1px solid #555; color:#ccc; margin-top:10px; width:100%;">← Voltar</button>
+    </div>
+</div>
+
+<div id="bettorAuthScreen" class="overlay-screen" style="display:none;">
+    <div class="login-box">
+        <h2 style="color:#00e5ff; margin-bottom:8px; font-weight:900;">PAINEL DE APOSTADOR</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:18px;">Aposte hcoins nas partidas dos campeonatos</p>
+
+        <div id="bettorTabs" style="display:flex; gap:8px; margin-bottom:15px;">
+            <button onclick="bettorTab('login')" id="tabLogin" style="background:var(--dark-main);">Entrar</button>
+            <button onclick="bettorTab('register')" id="tabRegister">Criar conta</button>
+        </div>
+
+        <div id="bettorLoginForm">
+            <input type="text" id="bUser" placeholder="Usuário">
+            <input type="password" id="bPass" placeholder="Senha">
+            <button class="action-btn" onclick="doBettorLogin()" style="background:#005f73; box-shadow:0 0 10px #00e5ff;">Entrar</button>
+        </div>
+
+        <div id="bettorRegisterForm" style="display:none;">
+            <input type="text" id="rName" placeholder="Seu nome">
+            <input type="text" id="rUser" placeholder="Usuário (sem espaços)">
+            <input type="password" id="rPass" placeholder="Senha (mín 4 caracteres)">
+            <button class="action-btn" onclick="doBettorRegister()" style="background:#005f73; box-shadow:0 0 10px #00e5ff;">Criar conta (ganha 1000 hcoins)</button>
+        </div>
+
+        <button onclick="backToChoose()" style="background:transparent; border:1px solid #555; color:#ccc; margin-top:14px; width:100%;">← Voltar</button>
+    </div>
+</div>  
+
+<div id="playerAuthScreen" class="overlay-screen" style="display:none;">
+    <div class="login-box">
+        <h2 style="color:#b14bff; margin-bottom:8px; font-weight:900;">PAINEL DE JOGADOR</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:18px;">Acompanhe seu desempenho e poste no HSocial</p>
+
+        <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <button onclick="playerTab('login')" id="ptabLogin" style="background:var(--dark-main);">Entrar</button>
+            <button onclick="playerTab('register')" id="ptabRegister">Criar conta</button>
+        </div>
+
+        <div id="playerLoginForm">
+            <input type="text" id="plUser" placeholder="Usuário">
+            <input type="password" id="plPass" placeholder="Senha">
+            <button class="action-btn" onclick="doPlayerLogin()" style="background:#3a005f; box-shadow:0 0 10px #b14bff;">Entrar</button>
+        </div>
+
+        <div id="playerRegisterForm" style="display:none;">
+            <input type="text" id="prPlayerName" placeholder="Seu nome de jogador (ex: Cristiano)">
+            <input type="text" id="prTeamName" placeholder="Nome do seu time (ex: Sporting)">
+            <input type="text" id="prUser" placeholder="Usuário (sem espaços)">
+            <input type="password" id="prPass" placeholder="Senha (mín 4 caracteres)">
+            <button class="action-btn" onclick="doPlayerRegister()" style="background:#3a005f; box-shadow:0 0 10px #b14bff;">Criar conta</button>
+        </div>
+
+        <button onclick="backToChoose()" style="background:transparent; border:1px solid #555; color:#ccc; margin-top:14px; width:100%;">← Voltar</button>
+    </div>
+</div>
+
+<div id="matchModal" class="modal">  
+    <div class="modal-content" id="modalContent"></div>  
+</div>  
+
+<h1 class="header-title">HADES FOOTBALL SIMULATOR (BETA 1.0)</h1>  
+<p class="header-sub">feito por @slvthereal no Instagram</p>  
+
+<nav id="mainNav">  
+    <button onclick="nav('campeonatos')" style="background: #222;">Menu Champs</button>  
+    <button id="navElencoGeral" onclick="nav('elencoGeral')" style="background:#3a005f; border:1px solid #b14bff;">Elenco Geral</button>
+    <button id="navTimes" onclick="nav('cadastro')">Times do Camp</button>  
+    <button id="navGrupos" onclick="nav('grupos')">Fase de Grupos</button>  
+    <button id="navMataMata" onclick="nav('matamata')">Mata-Mata</button>  
+    <button id="navNoticias" onclick="nav('noticias')" style="border-color: #00e5ff;">Notícias 📰</button>
+    <button id="navEstat" onclick="nav('estatisticas')">Estatísticas</button>
+    <button onclick="adminLogout()" style="background:transparent; border:1px solid #ff003c; color:#ff003c;">Sair</button>
+</nav>  
+
+<div id="campeonatos" class="container section">  
+    <h2>Seus Campeonatos</h2>  
+    <div style="margin: 15px 0; padding-bottom: 15px; border-bottom: 1px dashed var(--main);">  
+        <input type="text" id="newCampName" placeholder="Nome do novo campeonato...">
+
+        <label style="font-size:0.8rem; color:#aaa; display:block; margin-top:5px;">Formato do campeonato:</label>
+        <select id="newCampFormat" onchange="updateFormatFields()">
+            <option value="groups_only">Só Grupos</option>
+            <option value="groups_ko" selected>Grupos + Eliminatórias</option>
+            <option value="ko_only">Só Eliminatórias (mata-mata)</option>
+            <option value="league">Liga (pontos corridos)</option>
+            <option value="league_ko">Liga + Eliminatórias</option>
+        </select>
+
+        <div id="formatFields" style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 6px; margin-top: 8px; border:1px solid #333;"></div>
+
+        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 6px; margin-top: 8px; border:1px solid #333;">
+            <div style="font-size:0.85rem; color:var(--main); font-weight:bold; margin-bottom:6px;">Detalhes da partida</div>
+            <p style="font-size:0.75rem; color:#888; margin-bottom:10px;">Marque o que aparece nos detalhes de cada jogo simulado. Desmarcar deixa as partidas mais enxutas (só placar).</p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px 14px;">
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechScorers" checked style="width:auto; margin:0;"> ⚽️ Marcadores de gol
+                </label>
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechAssists" checked style="width:auto; margin:0;"> 🎯 Assistências
+                </label>
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechCards" checked style="width:auto; margin:0;"> 🟨🟥 Cartões
+                </label>
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechInjuries" checked style="width:auto; margin:0;"> 🏥 Lesões
+                </label>
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechRatings" checked style="width:auto; margin:0;"> 📊 Notas dos jogadores
+                </label>
+                <label style="font-size:0.85rem; color:#ccc; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="mechMotm" checked style="width:auto; margin:0;"> 🌟 Craque da partida
+                </label>
+            </div>
+            <p style="font-size:0.7rem; color:#666; margin-top:8px;">Obs: o craque depende das notas. Sem notas, não há craque.</p>
+        </div>
+
+        <button class="action-btn" onclick="createCamp()" style="margin-top:10px;">Criar Novo Campeonato</button>  
+    </div>  
+    <div id="campList" style="display:flex; flex-direction:column; gap:10px;"></div>  
+</div>  
+
+<div id="cadastro" class="container section">  
+    <h2 id="campTitleReg">Times do Campeonato</h2>  
+    <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">Faltam: <span id="teamCount">16</span> times para fechar a liga.</p>  
+      
+    <div id="addTeamSection" style="margin-bottom: 20px;">  
+        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid var(--main);">
+            <h4 style="color:#ccc; margin-bottom:10px;">Adicionar Time do Elenco Geral</h4>
+            <p style="font-size:0.75rem; color:#888; margin-bottom:10px;">Os times e jogadores são cadastrados na aba <strong style="color:#b14bff;">Elenco Geral</strong>. Aqui você só escolhe quem entra neste campeonato.</p>
+            <select id="globalTeamSelect"></select>  
+            <button class="action-btn" onclick="addExistingTeamToCamp()">Adicionar ao Campeonato</button>  
+        </div>  
+    </div>  
+
+    <h3 style="margin-top:20px; color:var(--main);">Times Confirmados</h3>  
+    <div id="teamList" class="grid-teams"></div>  
+    <button id="btnStart" class="action-btn" style="display:none; background:#ff0055;" onclick="startCamp()">Realizar Sorteio e Iniciar Campeonato</button>  
+</div>  
+
+<div id="grupos" class="container section">  
+    <h2 id="campTitleGrp">Fase de Grupos</h2>  
+    <div id="groupStandings"></div>  
+    <h3 style="margin-top:20px; color:var(--main);">Jogos</h3>  
+    <button class="action-btn" onclick="simulateAllPhase('groups')" style="margin-bottom: 15px;">Simular Jogos Restantes da Fase</button>  
+    <div id="groupMatches"></div>  
+    <button id="btnAdvanceGroups" class="action-btn danger-btn" onclick="advancePhase()" style="margin-top:20px;">Avançar Fase</button>  
+</div>  
+
+<div id="matamata" class="container section">  
+    <h2 id="campTitleKO">Fase Eliminatória</h2>  
+    <button class="action-btn" onclick="simulateAllPhase('knockout')" style="margin-bottom: 15px;">Simular Jogos da Fase Atual</button>  
+    <div id="knockoutMatches"></div>  
+    <button id="btnAdvanceKO" class="action-btn danger-btn" onclick="advancePhase()" style="margin-top:20px;">Avançar Chaveamento</button>  
+</div>  
+
+<div id="noticias" class="container section">  
+    <h2 id="campTitleNews">Hades News 🗞️</h2>  
+    <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">Nosso repórter movido a Inteligência Artificial acompanhando os bastidores do campeonato.</p>
+    <button class="action-btn" onclick="generateNews()" style="margin-bottom: 20px; background: #00e5ff; color: #000; box-shadow: 0 0 10px #00e5ff;">Gerar Nova Fofoca/Notícia com IA 🎙️</button>  
+    <div id="newsList" style="display:flex; flex-direction:column; gap:15px;"></div>  
+</div>  
+
+<div id="estatisticas" class="container section">  
+    <h2 id="campTitleStats">Estatísticas do Campeonato</h2>  
+    <h3 style="margin-top:15px; color:var(--main);">Top 10 Artilheiros ⚽️</h3>  
+    <ul id="topG" class="stats-list"></ul>  
+    <h3 style="margin-top:15px; color:var(--main);">Top 10 Assistências 🎯</h3>  
+    <ul id="topA" class="stats-list"></ul>  
+</div>
+
+<!-- ========= ELENCO GERAL (ADMIN) ========= -->
+<div id="elencoGeral" class="container section">
+    <h2 style="color:#b14bff;">Elenco Geral</h2>
+    <p style="font-size:0.85rem; color:#aaa; margin-bottom:15px;">Cadastre aqui os times e seus jogadores. Esses times poderão ser usados em qualquer campeonato.</p>
+
+    <div style="background:rgba(0,0,0,0.4); padding:15px; border-radius:8px; border:1px solid #b14bff; margin-bottom:20px;">
+        <h4 style="color:#ccc; margin-bottom:10px;">➕ Cadastrar Novo Time</h4>
+        <p style="font-size:0.75rem; color:#888; margin-bottom:10px;">Os jogadores são opcionais — você pode editar depois.</p>
+        <input type="text" id="egTeamName" placeholder="Nome do Time" style="font-size:1.1rem; font-weight:bold; color:var(--main);">
+        <div id="egPlayersInputs" class="roster-grid"></div>
+        <button onclick="createGlobalTeamStandalone()" class="action-btn" style="background:#3a005f; box-shadow:0 0 8px #b14bff;">Salvar Time no Elenco</button>
+    </div>
+
+    <h3 style="color:#b14bff; margin-top:20px;">Times Cadastrados</h3>
+    <div id="elencoList" style="display:flex; flex-direction:column; gap:12px; margin-top:10px;"></div>
+
+    <h3 style="color:#b14bff; margin-top:30px;">🔁 Transferir Jogador</h3>
+    <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Se a posição de destino já tiver jogador, será feita uma troca.</p>
+    <div style="background:rgba(0,0,0,0.4); padding:15px; border-radius:8px; border:1px solid #444;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+                <label style="font-size:0.8rem; color:#aaa;">Time origem:</label>
+                <select id="trFromTeam" onchange="trFillPlayers('from')"></select>
+                <label style="font-size:0.8rem; color:#aaa;">Jogador:</label>
+                <select id="trFromIdx"></select>
+            </div>
+            <div>
+                <label style="font-size:0.8rem; color:#aaa;">Time destino:</label>
+                <select id="trToTeam" onchange="trFillPlayers('to')"></select>
+                <label style="font-size:0.8rem; color:#aaa;">Posição destino:</label>
+                <select id="trToIdx"></select>
+            </div>
+        </div>
+        <button class="action-btn" onclick="doTransferPlayer()" style="background:#3a005f; box-shadow:0 0 8px #b14bff; margin-top:10px;">Transferir / Trocar</button>
+    </div>
+</div>
+
+<!-- ========= PAINEL JOGADOR ========= -->
+<div id="playerApp" style="display:none; width:100%; max-width:800px;" data-bg="3">
+    <div class="bettor-header" style="border-color:#b14bff;">
+        <div>
+            <strong style="color:#b14bff; font-size:1.1rem;">⚽️ <span id="pPlayerName">—</span></strong>
+            <div style="font-size:0.75rem; color:#aaa;">Time: <span id="pTeamName">—</span> · @<span id="pUser">—</span></div>
+        </div>
+        <button onclick="openEditPlayerInfo()" style="background:transparent; border:1px solid #b14bff; color:#b14bff; min-width:auto; padding:6px 12px; flex:none;">Editar</button>
+        <button onclick="playerLogout()" style="background:transparent; border:1px solid #ff003c; color:#ff003c; min-width:auto; padding:6px 12px; flex:none;">Sair</button>
+    </div>
+
+    <nav id="playerNav">
+        <button onclick="pnav('pDesempenho')" id="pnavDesempenho" style="background:#3a005f;">📊 Desempenho</button>
+        <button onclick="pnav('pHSocial')" id="pnavHSocial">🌐 HSocial</button>
+    </nav>
+
+    <div id="pDesempenho" class="container psection">
+        <h2 style="color:#b14bff;">Meu Desempenho</h2>
+        <div id="pPerfSummary" style="margin-top:10px;"></div>
+        <h3 style="color:#b14bff; margin-top:25px;">Por Campeonato</h3>
+        <div id="pPerfTournaments" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
+    </div>
+
+    <div id="pHSocial" class="container psection">
+        <h2 style="color:#b14bff;">HSocial 🌐</h2>
+        <div style="background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; border:1px solid #b14bff; margin-bottom:15px;">
+            <textarea id="pPostText" placeholder="Compartilhe algo com a galera..." rows="3" style="width:100%; resize:vertical;"></textarea>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+                <input type="file" id="pPostImage" accept="image/*" onchange="onPostImageSelected()" style="flex:1; min-width:200px; font-size:0.85rem;">
+                <button id="pPostImgClear" onclick="clearPostImage()" style="display:none; background:transparent; border:1px solid #888; color:#aaa; min-width:auto; padding:6px 12px; flex:none;">Tirar imagem</button>
+            </div>
+            <div id="pPostImgPreview" style="margin-top:8px;"></div>
+            <button class="action-btn" onclick="submitPost()" style="background:#3a005f; box-shadow:0 0 8px #b14bff; margin-top:10px;">Publicar</button>
+        </div>
+        <div id="pPostsFeed" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+</div>
+
+<!-- ========= HSOCIAL PÚBLICO ========= -->
+<div id="hsocialPublic" style="display:none; width:100%; max-width:800px;" data-bg="4">
+    <div class="bettor-header" style="border-color:#b14bff;">
+        <strong style="color:#b14bff; font-size:1.2rem;">🌐 HSocial — Feed Público</strong>
+        <button onclick="closePublicHSocial()" style="background:transparent; border:1px solid #ff003c; color:#ff003c; min-width:auto; padding:6px 12px; flex:none;">Sair</button>
+    </div>
+    <div class="container">
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">Você está vendo o feed em modo leitura. Para postar, faça login como Jogador.</p>
+        <div id="publicPostsFeed" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+</div>
+
+<style>
+    #playerApp .psection { display:none; }
+    #playerApp .psection.active { display:block; animation: fadeIn 0.3s; }
+    #playerNav { display:flex; gap:8px; width:100%; margin-bottom:15px; }
+    #playerNav button { flex:1; }
+    .hpost { background:rgba(0,0,0,0.5); border:1px solid #444; border-radius:8px; padding:12px; }
+    .hpost-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .hpost-author { color:#b14bff; font-weight:bold; }
+    .hpost-team { color:#aaa; font-size:0.8rem; }
+    .hpost-time { color:#666; font-size:0.7rem; }
+    .hpost img { max-width:100%; border-radius:6px; margin-top:8px; }
+    .perf-card { background:rgba(0,0,0,0.5); border:1px solid #444; border-radius:8px; padding:12px; }
+    .perf-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-top:10px; }
+    .perf-cell { background:rgba(255,255,255,0.04); padding:8px; border-radius:6px; text-align:center; }
+    .perf-cell strong { display:block; color:#b14bff; font-size:1.4rem; }
+    .perf-cell small { color:#aaa; font-size:0.7rem; }
+    .elenco-card { background:rgba(0,0,0,0.5); border:1px solid #444; border-radius:8px; padding:12px; }
+</style>
+
+<!-- ========= PAINEL APOSTADOR ========= -->
+<div id="bettorApp" style="display:none; width:100%; max-width:800px;" data-bg="2">
+    <div class="bettor-header">
+        <div>
+            <strong style="color:#00e5ff; font-size:1.1rem;">🎲 <span id="bettorName">—</span></strong>
+            <div style="font-size:0.75rem; color:#aaa;">@<span id="bettorUser">—</span></div>
+        </div>
+        <span class="hcoins-badge"><span id="bettorHcoins">0</span> hcoins</span>
+        <button onclick="bettorLogout()" style="background:transparent; border:1px solid #ff003c; color:#ff003c; min-width:auto; padding:6px 12px; flex:none;">Sair</button>
+    </div>
+
+    <nav id="bettorNav">
+        <button onclick="bnav('bCamps')" id="bnavCamps" style="background:var(--dark-main);">Campeonatos</button>
+        <button onclick="bnav('bMyBets')" id="bnavMyBets">Minhas Apostas</button>
+        <button onclick="bnav('bRank')" id="bnavRank">Ranking</button>
+    </nav>
+
+    <div id="bCamps" class="container bsection">
+        <h2 style="color:#00e5ff;">Campeonatos Liberados</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">Apenas campeonatos com apostas abertas pelo admin aparecem aqui.</p>
+        <div id="bettorCampList"></div>
+    </div>
+
+    <div id="bCampDetail" class="container bsection" style="display:none;">
+        <button onclick="bnav('bCamps')" style="background:transparent; border:1px solid #555; min-width:auto; padding:6px 12px; flex:none; margin-bottom:10px;">← Voltar aos Campeonatos</button>
+        <h2 id="bCampName" style="color:#00e5ff;"></h2>
+        <p id="bCampMeta" style="font-size:0.8rem; color:#aaa; margin-bottom:15px;"></p>
+
+        <h3 style="color:#fff; margin-top:10px;">Partidas para apostar</h3>
+        <div id="bPendingMatches" style="margin-top:10px;"></div>
+
+        <h3 style="color:#aaa; margin-top:25px;">Resultados recentes</h3>
+        <div id="bPlayedMatches" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="bMyBets" class="container bsection" style="display:none;">
+        <h2 style="color:#00e5ff;">Minhas Apostas</h2>
+        <div style="display:flex; gap:8px; margin:10px 0;">
+            <button onclick="filterMyBets('all')" id="fbAll" style="background:var(--dark-main);">Todas</button>
+            <button onclick="filterMyBets('pending')" id="fbPending">Pendentes</button>
+            <button onclick="filterMyBets('won')" id="fbWon">Ganhas</button>
+            <button onclick="filterMyBets('lost')" id="fbLost">Perdidas</button>
+        </div>
+        <div id="myBetsSummary" style="background:rgba(0,0,0,0.5); padding:12px; border-radius:8px; margin-bottom:15px; font-size:0.85rem;"></div>
+        <div id="myBetsList"></div>
+    </div>
+
+    <div id="bRank" class="container bsection" style="display:none;">
+        <h2 style="color:#00e5ff;">🏆 Ranking de Apostadores</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">Top 20 maiores carteiras de hcoins</p>
+        <div id="rankingList"></div>
+    </div>
+</div>
+
+<style>
+    #bettorApp .bsection { display:none; }
+    #bettorApp .bsection.active { display:block; animation: fadeIn 0.3s; }
+    #bettorNav { display:flex; gap:8px; width:100%; margin-bottom:15px; }
+    #bettorNav button { flex:1; }
+</style>
+
+<!-- Modal de aposta -->
+<div id="betModal" class="modal">
+    <div class="modal-content" id="betModalContent"></div>
+</div>
+
+<script>  
+    let appData = {};  
+    let currentCampId = null;  
+    let editingTeamId = null;  
+    const POSITIONS_DEF = ["GK", "LE", "ZAG", "ZAG", "LD", "MLE", "MAT", "MLD", "PTE", "CA", "PTD"];  
+
+    // --- ESCOLHA DE PAINEL ---
+    function showAdminLogin() {
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+    }
+    function showBettorAuth() {
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('bettorAuthScreen').style.display = 'flex';
+    }
+    function backToChoose() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('bettorAuthScreen').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'flex';
+    }
+
+    function bettorTab(tab) {
+        const isLogin = tab === 'login';
+        document.getElementById('bettorLoginForm').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('bettorRegisterForm').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('tabLogin').style.background = isLogin ? 'var(--dark-main)' : '';
+        document.getElementById('tabRegister').style.background = isLogin ? '' : 'var(--dark-main)';
+    }
+
+    // --- LOGIN ADMIN ---
+    async function doAdminLogin() {
+        const username = document.getElementById('lUser').value;
+        const password = document.getElementById('lPass').value;
+        const res = await fetchAPI('/api/admin/login', 'POST', { username, password });
+        if(res.error) return alert('Acesso negado! ' + res.error);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainNav').style.display = 'flex';
+        nav('campeonatos');
+        loadAll();
+    }
+
+    async function adminLogout() {
+        await fetchAPI('/api/admin/logout', 'POST');
+        document.getElementById('mainNav').style.display = 'none';
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        currentCampId = null;
+        document.getElementById('chooseScreen').style.display = 'flex';
+    }
+
+    async function fetchAPI(path, method='GET', body=null) {  
+        const options = {method, headers: {'Content-Type': 'application/json'}};  
+        if(body) options.body = JSON.stringify(body);  
+        const res = await fetch(path, options);  
+        return await res.json();  
+    }  
+
+    function initUI() {  
+        let html = '';  
+        POSITIONS_DEF.forEach((pos, i) => {  
+            html += `<input type="text" id="egp${i}" placeholder="Jogador ${i+1} (${pos})">`;  
+        });  
+        const eg = document.getElementById('egPlayersInputs');
+        if(eg) eg.innerHTML = html;
+        updateFormatFields();
+    }  
+
+    async function loadAll() {  
+        appData = await fetchAPI('/api/data');  
+        renderCampeonatos();  
+          
+        if(currentCampId && appData.camps[currentCampId]) {  
+            renderCampContext(appData.camps[currentCampId]);  
+        }  
+    }  
+
+    const FORMAT_LABELS = {
+        'groups_only': 'Só Grupos',
+        'groups_ko': 'Grupos + Eliminatórias',
+        'ko_only': 'Só Mata-Mata',
+        'league': 'Liga (pontos corridos)',
+        'league_ko': 'Liga + Eliminatórias'
+    };
+
+    function updateFormatFields() {
+        const fmt = document.getElementById('newCampFormat').value;
+        const div = document.getElementById('formatFields');
+        let html = '';
+        if(fmt === 'groups_only' || fmt === 'groups_ko') {
+            html += `<label style="font-size:0.8rem; color:#aaa;">Quantidade de grupos:</label>
+                     <select id="cfgNumGroups" onchange="recalcTeams()">
+                       ${[1,2,4,8].map(v => `<option value="${v}" ${v===4?'selected':''}>${v}</option>`).join('')}
+                     </select>
+                     <label style="font-size:0.8rem; color:#aaa;">Times por grupo:</label>
+                     <select id="cfgTeamsPerGroup" onchange="recalcTeams()">
+                       ${[2,3,4,5,6,7,8].map(v => `<option value="${v}" ${v===4?'selected':''}>${v}</option>`).join('')}
+                     </select>
+                     <p style="font-size:0.8rem; color:#888; margin:4px 0;">Total de times: <strong id="cfgTotalTeams" style="color:var(--main)">16</strong></p>`;
+            if(fmt === 'groups_ko') {
+                html += `<label style="font-size:0.8rem; color:#aaa;">Quantos avançam por grupo:</label>
+                         <select id="cfgAdvancePerGroup">
+                           ${[1,2,3,4].map(v => `<option value="${v}" ${v===2?'selected':''}>${v}º colocado${v>1?'s':''}</option>`).join('')}
+                         </select>
+                         <label style="font-size:0.85rem; color:#aaa; display:flex; align-items:center; gap:8px; margin-top:8px;">
+                           <input type="checkbox" id="cfgKoTwoLegs" checked style="width:auto; margin:0;"> Eliminatórias com ida e volta
+                         </label>`;
+            }
+        } else if(fmt === 'ko_only') {
+            html += `<label style="font-size:0.8rem; color:#aaa;">Tamanho do mata-mata:</label>
+                     <select id="cfgKoSize">
+                       <option value="2">Final (2 times)</option>
+                       <option value="4">Semifinal (4 times)</option>
+                       <option value="8" selected>Quartas de Final (8 times)</option>
+                       <option value="16">Oitavas de Final (16 times)</option>
+                       <option value="32">16 Avos (32 times)</option>
+                     </select>
+                     <label style="font-size:0.85rem; color:#aaa; display:flex; align-items:center; gap:8px; margin-top:8px;">
+                       <input type="checkbox" id="cfgKoTwoLegs" checked style="width:auto; margin:0;"> Confrontos com ida e volta
+                     </label>`;
+        } else if(fmt === 'league') {
+            html += `<label style="font-size:0.8rem; color:#aaa;">Quantidade de times:</label>
+                     <input type="number" id="cfgNumTeams" value="10" min="2" max="32">
+                     <label style="font-size:0.85rem; color:#aaa; display:flex; align-items:center; gap:8px; margin-top:8px;">
+                       <input type="checkbox" id="cfgLeagueTwoLegs" checked style="width:auto; margin:0;"> Turno e returno (ida e volta)
+                     </label>`;
+        } else if(fmt === 'league_ko') {
+            html += `<label style="font-size:0.8rem; color:#aaa;">Quantidade de times:</label>
+                     <input type="number" id="cfgNumTeams" value="12" min="4" max="32">
+                     <label style="font-size:0.8rem; color:#aaa;">Quantos avançam para o mata-mata:</label>
+                     <select id="cfgKoSize">
+                       <option value="2">Final (top 2)</option>
+                       <option value="4" selected>Semifinal (top 4)</option>
+                       <option value="8">Quartas (top 8)</option>
+                       <option value="16">Oitavas (top 16)</option>
+                     </select>
+                     <label style="font-size:0.85rem; color:#aaa; display:flex; align-items:center; gap:8px; margin-top:8px;">
+                       <input type="checkbox" id="cfgLeagueTwoLegs" checked style="width:auto; margin:0;"> Liga ida e volta
+                     </label>
+                     <label style="font-size:0.85rem; color:#aaa; display:flex; align-items:center; gap:8px;">
+                       <input type="checkbox" id="cfgKoTwoLegs" checked style="width:auto; margin:0;"> Eliminatórias ida e volta
+                     </label>`;
+        }
+        div.innerHTML = html;
+    }
+
+    function recalcTeams() {
+        const ng = parseInt(document.getElementById('cfgNumGroups').value);
+        const tpg = parseInt(document.getElementById('cfgTeamsPerGroup').value);
+        document.getElementById('cfgTotalTeams').innerText = ng * tpg;
+    }
+
+    function renderCampeonatos() {  
+        const list = document.getElementById('campList');  
+        const camps = Object.values(appData.camps);  
+        if(camps.length === 0) {  
+            list.innerHTML = "<p style='color:#888; text-align:center;'>Nenhum campeonato criado ainda.</p>";  
+            return;  
+        }  
+        list.innerHTML = camps.map(c => {
+            const cfg = c.config || { num_teams: 16 };
+            const fmt = c.format || 'groups_ko';
+            const bettingOpen = !!c.betting_open;
+            const canBet = c.phase !== 'registration' && c.phase !== 'finished';
+            return `
+            <div class="match-card" style="text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <div>
+                        <strong style="color:var(--main); font-size:1.2rem;">${c.name}</strong><br>
+                        <small style="color:#aaa;">Formato: ${FORMAT_LABELS[fmt] || fmt} | Status: ${phaseLabel(c.phase)} | Times: ${c.teams.length}/${cfg.num_teams}</small>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="enterCamp('${c.id}')" style="min-width:auto; padding:8px 15px;">Acessar</button>
+                        <button onclick="deleteCamp('${c.id}')" class="danger-btn" style="min-width:auto; padding:8px 15px;">Excluir</button>
+                    </div>
+                </div>
+                <div class="betting-toggle-card" style="margin-top:10px;">
+                    <div style="font-size:0.85rem;">
+                        🎲 Apostas: <strong style="color:${bettingOpen ? '#0fff8a' : '#ff003c'};">${bettingOpen ? 'ABERTAS' : 'FECHADAS'}</strong>
+                        ${!canBet ? `<br><small style="color:#888;">Disponível só após o início do campeonato</small>` : ''}
+                    </div>
+                    ${canBet ? (bettingOpen
+                        ? `<button onclick="toggleBetting('${c.id}', false)" class="danger-btn" style="min-width:auto; padding:7px 14px;">Parar Apostas</button>`
+                        : `<button onclick="toggleBetting('${c.id}', true)" style="min-width:auto; padding:7px 14px; background:#005f73; border:1px solid #00e5ff;">Disponibilizar Apostas</button>`
+                    ) : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function phaseLabel(p) {
+        return ({
+            'registration': 'Montando',
+            'groups': 'Fase de Grupos',
+            'league': 'Liga em andamento',
+            'r32': '16 Avos',
+            'r16': 'Oitavas',
+            'qf': 'Quartas',
+            'sf': 'Semifinal',
+            'final': 'Final',
+            'finished': 'Finalizado'
+        })[p] || p;
+    }
+
+    async function createCamp() {  
+        const name = document.getElementById('newCampName').value.trim();  
+        if(!name) return alert('Digite um nome!');  
+        const fmt = document.getElementById('newCampFormat').value;
+        const cfg = {};
+        if(fmt === 'groups_only' || fmt === 'groups_ko') {
+            cfg.num_groups = parseInt(document.getElementById('cfgNumGroups').value);
+            cfg.teams_per_group = parseInt(document.getElementById('cfgTeamsPerGroup').value);
+            cfg.num_teams = cfg.num_groups * cfg.teams_per_group;
+            if(fmt === 'groups_ko') {
+                cfg.advance_per_group = parseInt(document.getElementById('cfgAdvancePerGroup').value);
+                cfg.ko_two_legs = document.getElementById('cfgKoTwoLegs').checked;
+            }
+        } else if(fmt === 'ko_only') {
+            cfg.num_teams = parseInt(document.getElementById('cfgKoSize').value);
+            cfg.ko_size = cfg.num_teams;
+            cfg.ko_two_legs = document.getElementById('cfgKoTwoLegs').checked;
+        } else if(fmt === 'league') {
+            cfg.num_teams = parseInt(document.getElementById('cfgNumTeams').value);
+            cfg.league_two_legs = document.getElementById('cfgLeagueTwoLegs').checked;
+        } else if(fmt === 'league_ko') {
+            cfg.num_teams = parseInt(document.getElementById('cfgNumTeams').value);
+            cfg.ko_size = parseInt(document.getElementById('cfgKoSize').value);
+            cfg.league_two_legs = document.getElementById('cfgLeagueTwoLegs').checked;
+            cfg.ko_two_legs = document.getElementById('cfgKoTwoLegs').checked;
+        }
+        const mechanics = {
+            scorers: document.getElementById('mechScorers').checked,
+            assists: document.getElementById('mechAssists').checked,
+            cards: document.getElementById('mechCards').checked,
+            injuries: document.getElementById('mechInjuries').checked,
+            ratings: document.getElementById('mechRatings').checked,
+            motm: document.getElementById('mechMotm').checked,
+        };
+        const res = await fetchAPI('/api/camps', 'POST', { name, format: fmt, config: cfg, mechanics });
+        if(res.error) return alert(res.error);
+        document.getElementById('newCampName').value = '';  
+        loadAll();  
+    }  
+
+    async function deleteCamp(id) {  
+        if(confirm('Tem certeza que deseja apagar este campeonato e todo o seu histórico?')) {  
+            await fetchAPI(`/api/camps/${id}`, 'DELETE');  
+            if(currentCampId === id) currentCampId = null;  
+            loadAll();  
+        }  
+    }  
+
+    function enterCamp(id) {  
+        currentCampId = id;  
+        const camp = appData.camps[id];  
+        document.querySelectorAll("h2[id^='campTitle']").forEach(el => el.innerHTML = `[${camp.name}] ` + el.innerHTML.split(']').pop());  
+        loadAll();  
+        const fmt = camp.format || 'groups_ko';
+        let dest = 'cadastro';
+        if(camp.phase === 'registration') dest = 'cadastro';
+        else if(camp.phase === 'groups' || camp.phase === 'league') dest = 'grupos';
+        else dest = 'matamata';
+        nav(dest);  
+    }  
+
+    function renderCampContext(camp) {  
+        const cfg = camp.config || { num_teams: 16 };
+        const fmt = camp.format || 'groups_ko';
+        const maxTeams = cfg.num_teams;
+
+        // Atualizar rótulos das abas conforme o formato
+        const hasGroups = (fmt === 'groups_only' || fmt === 'groups_ko');
+        const hasLeague = (fmt === 'league' || fmt === 'league_ko');
+        const hasKo = (fmt !== 'groups_only' && fmt !== 'league');
+        const navGrupos = document.getElementById('navGrupos');
+        const navMatamata = document.getElementById('navMataMata');
+        if(hasGroups) navGrupos.innerText = 'Fase de Grupos';
+        else if(hasLeague) navGrupos.innerText = 'Liga';
+        navGrupos.style.display = (hasGroups || hasLeague) ? '' : 'none';
+        navMatamata.style.display = hasKo ? '' : 'none';
+
+        const titleGrp = document.getElementById('campTitleGrp');
+        if(titleGrp) titleGrp.innerText = `[${camp.name}] ${hasLeague ? 'Liga (Pontos Corridos)' : 'Fase de Grupos'}`;
+
+        const sel = document.getElementById('globalTeamSelect');  
+        sel.innerHTML = '<option value="">-- Selecione uma Equipe --</option>' +   
+            appData.global_teams.filter(t => !camp.teams.find(ct => ct.id === t.id))  
+            .map(t => `<option value="${t.id}">${t.name}</option>`).join('');  
+
+        document.getElementById('teamCount').innerText = `${maxTeams - camp.teams.length} (de ${maxTeams})`;
+        document.getElementById('teamList').innerHTML = camp.teams.map(t => `<div class="card">${t.name}</div>`).join('');  
+        document.getElementById('addTeamSection').style.display = camp.teams.length >= maxTeams ? 'none' : 'block';  
+        document.getElementById('btnStart').style.display = (camp.teams.length === maxTeams && camp.phase === 'registration') ? 'block' : 'none';  
+
+        const isGroupOrLeagueMatch = m => m.stage.startsWith('Grupo') || m.stage === 'Liga';
+        const gMatches = camp.matches.filter(isGroupOrLeagueMatch);  
+        const kMatches = camp.matches.filter(m => !isGroupOrLeagueMatch(m));  
+        document.getElementById('groupMatches').innerHTML = gMatches.map(renderMatchCard).join('');  
+        document.getElementById('knockoutMatches').innerHTML = kMatches.map(renderMatchCard).join('');  
+
+        // Botão de avançar - rótulo dinâmico
+        const btnAdvGrp = document.getElementById('btnAdvanceGroups');
+        const btnAdvKo = document.getElementById('btnAdvanceKO');
+        if(btnAdvGrp) btnAdvGrp.innerText = advanceLabel(camp);
+        if(btnAdvKo) btnAdvKo.innerText = advanceLabel(camp);
+        // Esconde botão de avançar se não há próxima fase
+        const noAdvance = (camp.phase === 'finished' ||
+                          (camp.phase === 'groups' && fmt === 'groups_only') ||
+                          (camp.phase === 'league' && fmt === 'league'));
+        if(btnAdvGrp) btnAdvGrp.style.display = noAdvance ? 'none' : '';
+        if(btnAdvKo && camp.phase === 'finished') btnAdvKo.style.display = 'none';
+        else if(btnAdvKo) btnAdvKo.style.display = '';
+
+        if(camp.phase !== 'registration') renderStandings(camp);  
+
+        renderNews(camp);
+
+        const players = Object.values(camp.stats);  
+        document.getElementById('topG').innerHTML = players.sort((a,b)=>b.goals - a.goals).slice(0,10).filter(p=>p.goals>0 && p.name).map(p => `<li><span>${p.name} <small>(${p.team} - ${p.pos})</small></span> <strong style="color:var(--main)">${p.goals}</strong></li>`).join('');  
+        document.getElementById('topA').innerHTML = players.sort((a,b)=>b.assists - a.assists).slice(0,10).filter(p=>p.assists>0 && p.name).map(p => `<li><span>${p.name} <small>(${p.team} - ${p.pos})</small></span> <strong style="color:var(--main)">${p.assists}</strong></li>`).join('');  
+    }  
+
+    // --- RENDERIZAÇÃO DE JOGOS ---  
+    function renderMatchCard(m) {  
+        return `  
+            <div class="match-card">  
+                <div style="color:var(--main); font-size:0.8rem; margin-bottom:5px; font-weight:bold;">${m.stage}</div>  
+                <div class="match-header">  
+                    <span class="team-name" style="text-align:right;">${m.home.name}</span>  
+                    <span class="score">${m.played ? `${m.hg} - ${m.ag}` : 'VS'}</span>  
+                    <span class="team-name" style="text-align:left;">${m.away.name}</span>  
+                </div>  
+                ${!m.played ? `<button onclick="simMatch(${m.id})" style="width:100%; margin-top:10px;">Simular Partida</button>` : `<button class="info-btn" onclick="showMatchDetails(${m.id})">Ver Detalhes</button>`}  
+                ${m.penalties ? `<div style="text-align:center; margin-top:8px; color:#ff0055; font-size:0.9rem;">${m.penalties}</div>` : ''}  
+            </div>  
+        `;  
+    }  
+
+    function buildStandings(teams, matches, filterFn) {  
+        let table = teams.map(t => ({name: t.name, pts:0, gp:0, sg:0}));  
+        matches.filter(filterFn).forEach(m => {  
+            let h = table.find(x => x.name === m.home.name);  
+            let a = table.find(x => x.name === m.away.name);  
+            if(!h || !a) return;
+            h.gp += m.hg; a.gp += m.ag;  
+            h.sg += (m.hg - m.ag); a.sg += (m.ag - m.hg);  
+            if(m.hg > m.ag) h.pts += 3;  
+            else if(m.ag > m.hg) a.pts += 3;  
+            else { h.pts += 1; a.pts += 1; }  
+        });  
+        table.sort((a,b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp);  
+        return table;
+    }
+
+    function renderStandings(camp) {
+        const fmt = camp.format || 'groups_ko';
+        const cfg = camp.config || {};
+        let html = '';
+        if(fmt === 'groups_only' || fmt === 'groups_ko') {
+            const advance = (fmt === 'groups_ko') ? (cfg.advance_per_group || 2) : 0;
+            const groupKeys = Object.keys(camp.groups || {}).sort();
+            for(let g of groupKeys) {
+                const table = buildStandings(camp.groups[g], camp.matches, m => m.group === g && m.played);
+                html += `
+                <h4 style="color:#fff; margin-top:15px;">Grupo ${g}</h4>  
+                <table class="group-table">  
+                    <tr><th>Time</th><th>Pts</th><th>SG</th><th>GP</th></tr>  
+                    ${table.map((t,i) => `<tr style="${i<advance ? 'background:rgba(162, 0, 255, 0.2); font-weight:bold;' : ''}"><td>${i+1}. ${t.name}</td><td>${t.pts}</td><td>${t.sg}</td><td>${t.gp}</td></tr>`).join('')}  
+                </table>`;
+            }
+        } else if(fmt === 'league' || fmt === 'league_ko') {
+            const top = (fmt === 'league_ko') ? (cfg.ko_size || 0) : 0;
+            const table = buildStandings(camp.teams, camp.matches, m => m.stage === 'Liga' && m.played);
+            html += `
+            <h4 style="color:#fff; margin-top:15px;">Classificação Geral</h4>  
+            <table class="group-table">  
+                <tr><th>#</th><th>Time</th><th>Pts</th><th>SG</th><th>GP</th></tr>  
+                ${table.map((t,i) => `<tr style="${i<top ? 'background:rgba(162, 0, 255, 0.2); font-weight:bold;' : ''}"><td>${i+1}</td><td>${t.name}</td><td>${t.pts}</td><td>${t.sg}</td><td>${t.gp}</td></tr>`).join('')}  
+            </table>`;
+        }
+        document.getElementById('groupStandings').innerHTML = html;
+    }
+
+    function advanceLabel(camp) {
+        const fmt = camp.format || 'groups_ko';
+        const cfg = camp.config || {};
+        const phase = camp.phase;
+        if(phase === 'groups') {
+            if(fmt === 'groups_only') return 'Encerrar Campeonato';
+            const ko = (cfg.ko_size) || ((cfg.advance_per_group||2) * Object.keys(camp.groups||{}).length);
+            return `Avançar para ${stageNameForSize(ko)}`;
+        }
+        if(phase === 'league') {
+            if(fmt === 'league') return 'Encerrar Campeonato';
+            return `Avançar para ${stageNameForSize(cfg.ko_size||4)}`;
+        }
+        if(phase === 'r32') return 'Avançar para Oitavas';
+        if(phase === 'r16') return 'Avançar para Quartas';
+        if(phase === 'qf') return 'Avançar para Semifinal';
+        if(phase === 'sf') return 'Avançar para Final';
+        if(phase === 'final') return 'Encerrar Campeonato';
+        return 'Avançar Fase';
+    }
+
+    function stageNameForSize(n) {
+        return ({2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas', 32:'16-Avos'})[n] || `Top ${n}`;
+    }
+
+    // --- MODAL DE DETALHES DA PARTIDA ---  
+    function showMatchDetails(m_id) {  
+        const camp = appData.camps[currentCampId];  
+        const m = camp.matches.find(x => x.id === m_id);  
+        if(!m) return;  
+
+        const cfgMech = (camp.config && camp.config.mechanics) || {};
+        const mech = {
+            scorers: cfgMech.scorers !== false,
+            assists: cfgMech.assists !== false,
+            cards: cfgMech.cards !== false,
+            injuries: cfgMech.injuries !== false,
+            ratings: cfgMech.ratings !== false,
+            motm: cfgMech.motm !== false,
+        };
+
+        let allPlayers = [];
+        Object.entries(m.ratings_h || {}).forEach(([name, data]) => allPlayers.push({name, team: m.home.name, val: data.val}));
+        Object.entries(m.ratings_a || {}).forEach(([name, data]) => allPlayers.push({name, team: m.away.name, val: data.val}));
+        
+        let motmHtml = '';
+        if(mech.motm && mech.ratings && allPlayers.length > 0) {
+            let motm = allPlayers.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+            motmHtml = `
+                <div style="text-align:center; background: rgba(255,215,0,0.1); border: 1px solid gold; padding: 12px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 0 10px rgba(255,215,0,0.2);">
+                    <span style="font-size:1.5rem;">🌟</span> <strong style="color:gold; font-size: 1.1rem;">CRAQUE DA PARTIDA</strong><br>
+                    <span style="color:#fff; font-size: 1rem;">${motm.name} (${motm.team}) - Nota: <strong>${motm.val.toFixed(1)}</strong></span>
+                </div>
+            `;
+        }
+
+        const formatEvents = (events) => {  
+            if(!events || events.length === 0) return '<p style="color:#888; font-size:0.85rem;">Nenhum gol marcado.</p>';  
+            return events.map(e => {
+                let tag = '';
+                let assistLine = '';
+                if(e.type === 'penalty') {
+                    tag = '<span class="event-tag tag-p">P</span>';
+                } else if(e.type === 'freekick') {
+                    tag = '<span class="event-tag tag-f">F</span>';
+                } else if(e.assist) {
+                    assistLine = `<br><small style="color:#aaa;">&nbsp;&nbsp;&nbsp;↳ 🎯 Ast: ${e.assist}</small>`;
+                } else {
+                    assistLine = `<br><small style="color:#666;">&nbsp;&nbsp;&nbsp;↳ sem assistência</small>`;
+                }
+                return `<div style="margin-bottom:8px;">⚽️ <b>${e.minute}</b> - ${e.player}${tag}${assistLine}</div>`;
+            }).join('');
+        };
+
+        const formatCards = (cards) => {
+            if(!cards || cards.length === 0) return '<p style="color:#888; font-size:0.85rem;">Sem cartões.</p>';
+            return cards.map(c => `<div style="margin-bottom:6px; font-size:0.9rem;"><span class="card-${c.type}"></span><b>${c.minute}</b> - ${c.player}</div>`).join('');
+        };
+
+        const formatInjuries = (injuries) => {
+            if(!injuries || injuries.length === 0) return '<p style="color:#888; font-size:0.85rem;">Sem lesões.</p>';
+            return injuries.map(i => `<div style="margin-bottom:6px; font-size:0.9rem;">🏥 <b>${i.minute}</b> - ${i.player} <small style="color:#ff8888;">(fora ${i.duration} ${i.duration === 1 ? 'jogo' : 'jogos'})</small></div>`).join('');
+        };
+
+        const formatRatings = (ratings) => {  
+            const keys = Object.keys(ratings);  
+            if(keys.length === 0) return '<p style="color:#888; font-size:0.85rem;">Sem jogadores cadastrados.</p>';  
+            return keys.map(name => `  
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; font-size:0.9rem;">  
+                    <span>${name} <small style="color:#777;">(${ratings[name].pos})</small></span>  
+                    <strong style="color:${ratings[name].val >= 8.0 ? '#00ff88' : (ratings[name].val >= 6.0 ? '#fff' : '#ff4444')}">${ratings[name].val.toFixed(1)}</strong>  
+                </div>  
+            `).join('');  
+        };  
+
+        const goalsBlock = mech.scorers ? `
+            <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:20px;">
+                <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                    <h4 style="color:#00e5ff; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">Gols - ${m.home.name}</h4>
+                    ${formatEvents(m.events_h)}
+                </div>
+                <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                    <h4 style="color:#ff0055; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">Gols - ${m.away.name}</h4>
+                    ${formatEvents(m.events_a)}
+                </div>
+            </div>` : '';
+
+        const cardsBlock = mech.cards ? `
+            <h4 style="text-align:center; color:#ffd700; margin-bottom:12px; border-top:1px dashed #555; padding-top:15px;">Cartões 🟨🟥</h4>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+                <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px;">
+                    <strong style="color:#00e5ff; display:block; margin-bottom:8px;">${m.home.name}</strong>
+                    ${formatCards(m.cards_h)}
+                </div>
+                <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px;">
+                    <strong style="color:#ff0055; display:block; margin-bottom:8px;">${m.away.name}</strong>
+                    ${formatCards(m.cards_a)}
+                </div>
+            </div>` : '';
+
+        const injuriesBlock = mech.injuries ? `
+            <h4 style="text-align:center; color:#ff8888; margin-bottom:12px; border-top:1px dashed #555; padding-top:15px;">Lesões 🏥</h4>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+                <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px;">
+                    <strong style="color:#00e5ff; display:block; margin-bottom:8px;">${m.home.name}</strong>
+                    ${formatInjuries(m.injuries_h)}
+                </div>
+                <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px;">
+                    <strong style="color:#ff0055; display:block; margin-bottom:8px;">${m.away.name}</strong>
+                    ${formatInjuries(m.injuries_a)}
+                </div>
+            </div>` : '';
+
+        const ratingsBlock = mech.ratings ? `
+            <h4 style="text-align:center; color:gold; margin-bottom:15px; border-top:1px dashed #555; padding-top:15px;">Avaliações dos Jogadores</h4>
+            <div class="ratings-cols">
+                <div style="flex:1;">
+                    <strong style="color:#00e5ff; display:block; margin-bottom:10px;">${m.home.name}</strong>
+                    ${formatRatings(m.ratings_h)}
+                </div>
+                <div style="flex:1;">
+                    <strong style="color:#ff0055; display:block; margin-bottom:10px;">${m.away.name}</strong>
+                    ${formatRatings(m.ratings_a)}
+                </div>
+            </div>` : '';
+
+        const html = `  
+            <span class="close-modal" onclick="closeModal()">X</span>  
+            <h3 style="text-align:center; color:var(--main); margin-bottom:5px;">Detalhes da Partida</h3>  
+            <p style="text-align:center; font-size:0.8rem; color:#aaa; margin-bottom:20px;">${m.stage}</p>  
+            <h2 style="text-align:center; margin-bottom:15px; font-size:1.8rem;">${m.home.name} <span style="color:var(--main)">${m.hg} x ${m.ag}</span> ${m.away.name}</h2>  
+
+            ${motmHtml}
+            ${goalsBlock}
+            ${cardsBlock}
+            ${injuriesBlock}
+            ${ratingsBlock}
+        `;  
+        document.getElementById('modalContent').innerHTML = html;  
+        document.getElementById('matchModal').style.display = 'flex';  
+    }  
+
+    function closeModal() {  
+        document.getElementById('matchModal').style.display = 'none';  
+    }  
+
+    // --- SISTEMA DE NOTÍCIAS COM IA ---
+    function renderNews(camp) {
+        const list = document.getElementById('newsList');
+        const newsArray = camp.news || [];
+        
+        if(newsArray.length === 0) {
+            list.innerHTML = "<p style='color:#888; text-align:center;'>Tudo quieto nos bastidores... Gere a primeira notícia!</p>";
+            return;
+        }
+        
+        list.innerHTML = newsArray.map(n => `
+            <div style="background:rgba(0,0,0,0.6); padding:15px; border-left:4px solid #00e5ff; border-radius:5px;">
+                <p style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e0e0e0;">${n.text}</p>
+            </div>
+        `).join('');
+    }
+
+    async function generateNews() {
+        if(!currentCampId) return alert('Acesse um campeonato primeiro!');
+        const btn = document.querySelector('#noticias .action-btn');
+        const originalLabel = btn.innerText;
+        btn.innerText = "Aguarde, repórter digitando a fofoca... ⏳";
+        btn.disabled = true;
+        try {
+            const res = await fetchAPI(`/api/camps/${currentCampId}/generate_news`, 'POST');
+            if(res.error) { alert(res.error); return; }
+            await loadAll();
+        } catch(e) {
+            alert('Falha ao gerar notícia: ' + (e && e.message ? e.message : e));
+        } finally {
+            btn.innerText = originalLabel;
+            btn.disabled = false;
+        }
+    }
+
+    // --- AÇÕES DO SISTEMA ---  
+    async function createGlobalTeamStandalone() {
+        const name = document.getElementById('egTeamName').value.trim();
+        if(!name) return alert('Digite o nome do time!');
+        const players = [];
+        for(let i = 0; i < POSITIONS_DEF.length; i++) {
+            players.push({
+                name: document.getElementById(`egp${i}`).value.trim(),
+                pos: POSITIONS_DEF[i]
+            });
+        }
+        const res = await fetchAPI('/api/global_teams', 'POST', { name, players });
+        if(res.error) return alert(res.error);
+        document.getElementById('egTeamName').value = '';
+        for(let i=0; i < POSITIONS_DEF.length; i++) document.getElementById(`egp${i}`).value = '';
+        alert('Time cadastrado no Elenco Geral!');
+        loadAll();
+    }
+
+    async function addExistingTeamToCamp() {  
+        if(!currentCampId) return alert('Acesse um campeonato primeiro!');  
+        const team_id = document.getElementById('globalTeamSelect').value;  
+        if(!team_id) return alert('Selecione uma equipe!');  
+          
+        const res = await fetchAPI(`/api/camps/${currentCampId}/add_team`, 'POST', { team_id });  
+        if(res.error) alert(res.error);  
+        loadAll();  
+    }  
+
+    async function startCamp() {  
+        const res = await fetchAPI(`/api/camps/${currentCampId}/start`, 'POST');  
+        if(res.error) return alert(res.error);
+        await loadAll();
+        const camp = appData.camps[currentCampId];
+        const fmt = camp.format || 'groups_ko';
+        if(fmt === 'ko_only') nav('matamata');
+        else nav('grupos');
+    }  
+
+    async function simMatch(m_id) {  
+        await fetchAPI(`/api/simulate/${currentCampId}/${m_id}`, 'POST');  
+        loadAll();  
+    }  
+
+    async function simulateAllPhase(type) {  
+        const camp = appData.camps[currentCampId];  
+        const matches = camp.matches.filter(m => !m.played && (type === 'groups' ? m.stage.startsWith('Grupo') : !m.stage.startsWith('Grupo')));  
+        for(let m of matches) await fetchAPI(`/api/simulate/${currentCampId}/${m.id}`, 'POST');  
+        loadAll();  
+    }  
+
+    async function advancePhase() {  
+        const res = await fetchAPI(`/api/next_phase/${currentCampId}`, 'POST');  
+        if(res.error) alert(res.error);  
+        else { alert(res.message); loadAll(); nav('matamata'); }  
+    }  
+
+    const SECTION_BG = {
+        campeonatos: '2',
+        elencoGeral: '4',
+        cadastro: '3',
+        grupos: '1',
+        matamata: '2',
+        noticias: '3',
+        estatisticas: '4'
+    };
+
+    const GLOBAL_SECTIONS = new Set(['campeonatos', 'elencoGeral']);
+
+    function nav(id) {  
+        if(!GLOBAL_SECTIONS.has(id) && !currentCampId) return alert('Acesse um campeonato primeiro!');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));  
+        document.getElementById(id).classList.add('active');  
+        if(SECTION_BG[id]) document.body.setAttribute('data-bg', SECTION_BG[id]);
+        if(id === 'elencoGeral') renderElencoGeral();
+    }  
+
+    // ============================================================
+    // ============== PAINEL APOSTADOR ============================
+    // ============================================================
+    let bettorState = { id:null, username:null, name:null, hcoins:0 };
+    let currentBetCamp = null;
+    let myBetsAll = [];
+    let myBetsFilter = 'all';
+    let pendingSelection = null; // { match, type, choice, odd }
+
+    async function doBettorRegister() {
+        const name = document.getElementById('rName').value.trim();
+        const username = document.getElementById('rUser').value.trim();
+        const password = document.getElementById('rPass').value;
+        if(!name || !username || !password) return alert('Preencha todos os campos!');
+        if(password.length < 4) return alert('Senha precisa ter no mínimo 4 caracteres.');
+        const res = await fetchAPI('/api/bettor/register', 'POST', { name, username, password });
+        if(res.error) return alert(res.error);
+        bettorState = { ...res.bettor };
+        enterBettorPanel();
+    }
+
+    async function doBettorLogin() {
+        const username = document.getElementById('bUser').value.trim();
+        const password = document.getElementById('bPass').value;
+        if(!username || !password) return alert('Preencha usuário e senha!');
+        const res = await fetchAPI('/api/bettor/login', 'POST', { username, password });
+        if(res.error) return alert(res.error);
+        bettorState = { ...res.bettor };
+        enterBettorPanel();
+    }
+
+    async function bettorLogout() {
+        await fetchAPI('/api/bettor/logout', 'POST');
+        bettorState = { id:null, username:null, name:null, hcoins:0 };
+        currentBetCamp = null;
+        document.getElementById('bettorApp').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'flex';
+        document.body.setAttribute('data-bg', '1');
+    }
+
+    function enterBettorPanel() {
+        document.getElementById('bettorAuthScreen').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainNav').style.display = 'none';
+        document.getElementById('bettorApp').style.display = 'block';
+        document.body.setAttribute('data-bg', '2');
+        renderBettorHeader();
+        bnav('bCamps');
+        loadBettorCamps();
+    }
+
+    function renderBettorHeader() {
+        document.getElementById('bettorName').innerText = bettorState.name || '';
+        document.getElementById('bettorUser').innerText = bettorState.username || '';
+        document.getElementById('bettorHcoins').innerText = bettorState.hcoins;
+    }
+
+    async function refreshBettorMe() {
+        const me = await fetchAPI('/api/bettor/me');
+        if(me && me.bettor) {
+            bettorState = { ...me.bettor };
+            renderBettorHeader();
+        }
+    }
+
+    function bnav(id) {
+        document.querySelectorAll('#bettorApp .bsection').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        ['bnavCamps','bnavMyBets','bnavRank'].forEach(n => document.getElementById(n).style.background = '');
+        if(id === 'bCamps')   document.getElementById('bnavCamps').style.background   = 'var(--dark-main)';
+        if(id === 'bMyBets')  { document.getElementById('bnavMyBets').style.background = 'var(--dark-main)'; loadMyBets(); }
+        if(id === 'bRank')    { document.getElementById('bnavRank').style.background   = 'var(--dark-main)'; loadRanking(); }
+        if(id === 'bCamps')   loadBettorCamps();
+    }
+
+    async function loadBettorCamps() {
+        const list = document.getElementById('bettorCampList');
+        list.innerHTML = '<p style="color:#888; text-align:center;">Carregando...</p>';
+        const res = await fetchAPI('/api/bettor/camps');
+        if(res.error) return list.innerHTML = `<p style="color:#ff003c;">${res.error}</p>`;
+        const camps = res.camps || [];
+        if(!camps.length) return list.innerHTML = '<p style="color:#888; text-align:center;">Nenhum campeonato com apostas abertas no momento.</p>';
+        list.innerHTML = camps.map(c => `
+            <div class="bettor-camp-card" onclick="openBetCamp('${c.id}')">
+                <strong style="color:#00e5ff; font-size:1.1rem;">${c.name}</strong>
+                <div style="font-size:0.78rem; color:#aaa; margin-top:4px;">
+                    ${FORMAT_LABELS[c.format] || c.format} • ${phaseLabel(c.phase)} • ${c.num_teams} times
+                </div>
+                <div style="font-size:0.78rem; color:#0fff8a; margin-top:4px;">⏳ ${c.matches_pending} partidas para apostar (${c.matches_total} no total)</div>
+            </div>
+        `).join('');
+    }
+
+    async function openBetCamp(camp_id) {
+        currentBetCamp = camp_id;
+        bnav('bCamps');
+        document.getElementById('bCamps').classList.remove('active');
+        document.getElementById('bCampDetail').classList.add('active');
+        document.getElementById('bPendingMatches').innerHTML = '<p style="color:#888;">Carregando...</p>';
+        document.getElementById('bPlayedMatches').innerHTML = '';
+        const res = await fetchAPI(`/api/bettor/camps/${camp_id}`);
+        if(res.error) return alert(res.error);
+        const camp = res.camp || {};
+        document.getElementById('bCampName').innerText = camp.name || '';
+        document.getElementById('bCampMeta').innerText = `${FORMAT_LABELS[camp.format] || camp.format} • ${phaseLabel(camp.phase)}`;
+
+        const pending = res.matches_pending || [];
+        const played = res.matches_played || [];
+
+        if(!pending.length) {
+            document.getElementById('bPendingMatches').innerHTML = '<p style="color:#888;">Nenhuma partida disponível para aposta no momento.</p>';
+        } else {
+            document.getElementById('bPendingMatches').innerHTML = pending.map((m, i) => renderBetMatch(m, i)).join('');
+            // armazena partidas para o openBetModal poder achar pelo índice
+            window._currentPending = pending;
+        }
+
+        if(!played.length) {
+            document.getElementById('bPlayedMatches').innerHTML = '<p style="color:#888; font-size:0.85rem;">Nenhum resultado ainda.</p>';
+        } else {
+            document.getElementById('bPlayedMatches').innerHTML = played.slice().reverse().slice(0, 12).map(m => `
+                <div class="bet-match-card" style="opacity:0.85;">
+                    <div style="color:#888; font-size:0.75rem;">${m.stage}</div>
+                    <div style="text-align:center; font-weight:bold; margin-top:4px;">
+                        ${m.home.name} <span style="color:#00e5ff;">${m.hg} - ${m.ag}</span> ${m.away.name}
+                    </div>
+                    ${m.penalties ? `<div style="text-align:center; color:#ff0055; font-size:0.8rem; margin-top:4px;">${m.penalties}</div>` : ''}
+                </div>
+            `).join('');
+        }
+    }
+
+    function renderBetMatch(m, idx) {
+        const o = m.odds || {};
+        const odd = (k) => o[k] != null ? o[k].toFixed(2) : '—';
+        return `
+            <div class="bet-match-card">
+                <div style="color:#888; font-size:0.75rem;">${m.stage}</div>
+                <div style="text-align:center; font-weight:bold; margin-top:4px; font-size:1.05rem;">
+                    ${m.home.name} <span style="color:#666;">vs</span> ${m.away.name}
+                </div>
+
+                <div class="bet-section-label">Resultado (1 X 2)</div>
+                <div class="odds-row">
+                    <div class="odd-btn" onclick="openBetModal(${idx}, '1X2', '1')"><span class="odd-label">Casa</span>${odd("1")}</div>
+                    <div class="odd-btn" onclick="openBetModal(${idx}, '1X2', 'X')"><span class="odd-label">Empate</span>${odd("X")}</div>
+                    <div class="odd-btn" onclick="openBetModal(${idx}, '1X2', '2')"><span class="odd-label">Visitante</span>${odd("2")}</div>
+                </div>
+
+                <div class="bet-section-label">Total de gols</div>
+                <div class="odds-row">
+                    <div class="odd-btn" onclick="openBetModal(${idx}, 'OU25', 'over')"><span class="odd-label">Mais de 2.5</span>${odd("over")}</div>
+                    <div class="odd-btn" onclick="openBetModal(${idx}, 'OU25', 'under')"><span class="odd-label">Menos de 2.5</span>${odd("under")}</div>
+                </div>
+
+                <div class="bet-section-label">Ambos marcam (BTTS)</div>
+                <div class="odds-row">
+                    <div class="odd-btn" onclick="openBetModal(${idx}, 'BTTS', 'yes')"><span class="odd-label">Sim</span>${odd("yes")}</div>
+                    <div class="odd-btn" onclick="openBetModal(${idx}, 'BTTS', 'no')"><span class="odd-label">Não</span>${odd("no")}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function openBetModal(matchIdx, bet_type, selection) {
+        const match = (window._currentPending || [])[matchIdx];
+        if(!match) return;
+        const o = match.odds || {};
+        const odd = o[selection];
+        pendingSelection = { match, bet_type, selection, odd };
+        const labels = {
+            '1':'Vitória ' + match.home.name,
+            'X':'Empate',
+            '2':'Vitória ' + match.away.name,
+            'over':'Mais de 2.5 gols',
+            'under':'Menos de 2.5 gols',
+            'yes':'Ambos marcam: Sim',
+            'no':'Ambos marcam: Não'
+        };
+        document.getElementById('betModalContent').innerHTML = `
+            <span class="close-modal" onclick="closeBetModal()">X</span>
+            <h3 style="text-align:center; color:#00e5ff;">Confirmar aposta</h3>
+            <p style="text-align:center; color:#aaa; font-size:0.8rem; margin-top:4px;">${match.stage}</p>
+            <h4 style="text-align:center; margin:14px 0; font-size:1.1rem;">${match.home.name} vs ${match.away.name}</h4>
+
+            <div style="background:rgba(0,229,255,0.08); border:1px solid #00e5ff; padding:12px; border-radius:8px; margin-bottom:14px; text-align:center;">
+                <div style="font-size:0.8rem; color:#aaa;">Sua aposta</div>
+                <div style="font-weight:bold; font-size:1.05rem; margin-top:4px;">${labels[selection] || selection}</div>
+                <div style="margin-top:6px;">Odd: <strong style="color:#00e5ff; font-size:1.2rem;">${odd.toFixed(2)}</strong></div>
+            </div>
+
+            <label style="font-size:0.85rem; color:#aaa;">Valor da aposta (hcoins) — saldo: ${bettorState.hcoins}</label>
+            <input type="number" id="betAmount" min="10" max="${bettorState.hcoins}" value="100" style="font-size:1.2rem; font-weight:bold;">
+            <div id="betPotential" style="text-align:center; font-size:0.9rem; color:#0fff8a; margin:6px 0;">Retorno potencial: ${(100 * odd).toFixed(2)} hcoins</div>
+
+            <button class="action-btn" onclick="placeBet()" style="background:#005f73; box-shadow:0 0 10px #00e5ff;">Confirmar aposta</button>
+            <button onclick="closeBetModal()" style="background:transparent; border:1px solid #555; color:#ccc; margin-top:8px; width:100%;">Cancelar</button>
+        `;
+        document.getElementById('betModal').style.display = 'flex';
+        const inp = document.getElementById('betAmount');
+        inp.oninput = () => {
+            const v = parseFloat(inp.value) || 0;
+            document.getElementById('betPotential').innerText = `Retorno potencial: ${(v * odd).toFixed(2)} hcoins`;
+        };
+    }
+
+    function closeBetModal() {
+        document.getElementById('betModal').style.display = 'none';
+        pendingSelection = null;
+    }
+
+    async function placeBet() {
+        if(!pendingSelection) return;
+        const amount = parseFloat(document.getElementById('betAmount').value);
+        if(!amount || amount < 10) return alert('Aposta mínima: 10 hcoins.');
+        if(amount > bettorState.hcoins) return alert('Saldo insuficiente!');
+        const { match, bet_type, selection } = pendingSelection;
+        const res = await fetchAPI('/api/bettor/bets', 'POST', {
+            camp_id: currentBetCamp,
+            match_id: match.id,
+            bet_type, selection, amount
+        });
+        if(res.error) return alert(res.error);
+        if(res.balance != null) { bettorState.hcoins = res.balance; renderBettorHeader(); }
+        closeBetModal();
+        alert(`Aposta confirmada!\n${amount} hcoins @ ${res.bet.odd}\nRetorno potencial: ${res.bet.potential_payout} hcoins`);
+        openBetCamp(currentBetCamp);
+    }
+
+    async function loadMyBets() {
+        const list = document.getElementById('myBetsList');
+        list.innerHTML = '<p style="color:#888;">Carregando...</p>';
+        const res = await fetchAPI('/api/bettor/bets');
+        if(res.error) return list.innerHTML = `<p style="color:#ff003c;">${res.error}</p>`;
+        myBetsAll = res.bets || [];
+        await refreshBettorMe();
+        renderMyBets();
+    }
+
+    function filterMyBets(f) {
+        myBetsFilter = f;
+        ['fbAll','fbPending','fbWon','fbLost'].forEach(b => document.getElementById(b).style.background = '');
+        document.getElementById({all:'fbAll',pending:'fbPending',won:'fbWon',lost:'fbLost'}[f]).style.background = 'var(--dark-main)';
+        renderMyBets();
+    }
+
+    function renderMyBets() {
+        const list = document.getElementById('myBetsList');
+        const summary = document.getElementById('myBetsSummary');
+        const all = myBetsAll;
+        const totalStaked = all.reduce((s,b) => s + b.amount, 0);
+        const won = all.filter(b => b.status === 'won');
+        const lost = all.filter(b => b.status === 'lost');
+        const pending = all.filter(b => b.status === 'pending');
+        const profit = won.reduce((s,b) => s + ((b.payout || 0) - b.amount), 0) - lost.reduce((s,b) => s + b.amount, 0);
+        summary.innerHTML = `
+            <strong>${all.length}</strong> apostas no total •
+            <span style="color:#ffd700;">${pending.length} pendentes</span> •
+            <span style="color:#0fff8a;">${won.length} ganhas</span> •
+            <span style="color:#ff003c;">${lost.length} perdidas</span><br>
+            Total apostado: <strong>${totalStaked}</strong> hcoins •
+            Resultado: <strong style="color:${profit >= 0 ? '#0fff8a' : '#ff003c'};">${profit >= 0 ? '+' : ''}${profit.toFixed(2)} hcoins</strong>
+        `;
+
+        let filtered = all;
+        if(myBetsFilter !== 'all') filtered = all.filter(b => b.status === myBetsFilter);
+        if(!filtered.length) return list.innerHTML = '<p style="color:#888; text-align:center;">Nenhuma aposta nessa categoria.</p>';
+
+        const choiceLabel = (b, mi) => {
+            const home = mi ? mi.home : 'casa';
+            const away = mi ? mi.away : 'visitante';
+            if(b.bet_type === '1X2') return ({'1':'Vitória '+home, 'X':'Empate', '2':'Vitória '+away})[b.selection];
+            if(b.bet_type === 'OU25') return b.selection === 'over' ? 'Mais de 2.5 gols' : 'Menos de 2.5 gols';
+            if(b.bet_type === 'BTTS') return 'Ambos marcam: ' + (b.selection === 'yes' ? 'Sim' : 'Não');
+            return b.selection;
+        };
+        const statusBadge = (s) => `<span class="status-badge status-${s}">${s === 'pending' ? 'Pendente' : s === 'won' ? 'Ganha' : 'Perdida'}</span>`;
+
+        list.innerHTML = filtered.map(b => {
+            const mi = b.match;
+            const matchTitle = mi ? `${mi.home} vs ${mi.away}` : '— Partida —';
+            const resultLine = (mi && mi.played) ? `Resultado: ${mi.home} ${mi.hg} - ${mi.ag} ${mi.away}` : '';
+            return `
+            <div class="bet-row ${b.status}">
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+                    <strong>${matchTitle}</strong>
+                    ${statusBadge(b.status)}
+                </div>
+                <div style="font-size:0.78rem; color:#aaa;">${b.camp_name}${mi ? ' • ' + mi.stage : ''}</div>
+                <div style="margin-top:4px;">📌 ${choiceLabel(b, mi)} • Odd <strong style="color:#00e5ff;">${b.odd.toFixed(2)}</strong></div>
+                <div style="margin-top:4px;">
+                    Apostou: <strong>${b.amount}</strong> hcoins
+                    ${b.status === 'won' ? `→ Recebeu: <strong style="color:#0fff8a;">${b.payout}</strong>` : ''}
+                    ${b.status === 'lost' ? `→ <span style="color:#ff003c;">perdeu o valor</span>` : ''}
+                    ${b.status === 'pending' ? `→ Pode ganhar: <strong style="color:#ffd700;">${(b.amount * b.odd).toFixed(2)}</strong>` : ''}
+                </div>
+                ${resultLine ? `<div style="font-size:0.78rem; color:#888; margin-top:3px;">${resultLine}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    async function loadRanking() {
+        const list = document.getElementById('rankingList');
+        list.innerHTML = '<p style="color:#888;">Carregando...</p>';
+        const res = await fetchAPI('/api/bettor/ranking');
+        if(res.error) return list.innerHTML = `<p style="color:#ff003c;">${res.error}</p>`;
+        const ranking = res.ranking || [];
+        if(!ranking.length) return list.innerHTML = '<p style="color:#888;">Sem apostadores ainda.</p>';
+        const medals = ['🥇','🥈','🥉'];
+        list.innerHTML = ranking.map((r, i) => {
+            const isMe = bettorState.id && r.id === bettorState.id;
+            return `
+                <div style="background:rgba(0,0,0,0.5); padding:12px 14px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border-left:3px solid ${isMe ? '#00e5ff' : '#444'};">
+                    <div>
+                        <strong style="font-size:1.05rem;">${medals[i] || (i+1)+'º'} ${r.name}</strong>
+                        ${isMe ? '<span style="color:#00e5ff; font-size:0.75rem;"> (você)</span>' : ''}
+                        <div style="font-size:0.75rem; color:#888;">@${r.username}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <strong style="color:#00e5ff; font-size:1.1rem;">${r.hcoins}</strong>
+                        <div style="font-size:0.7rem; color:#888;">hcoins</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- ADMIN: alternar apostas no campeonato ---
+    async function toggleBetting(camp_id, open) {
+        const action = open ? 'open' : 'close';
+        const res = await fetchAPI(`/api/camps/${camp_id}/betting/${action}`, 'POST');
+        if(res.error) return alert(res.error);
+        loadAll();
+    }
+
+    // ============================================================
+    // ============== ELENCO GERAL (ADMIN) =========================
+    // ============================================================
+    function renderElencoGeral() {
+        const list = document.getElementById('elencoList');
+        if(!list || !appData.global_teams) return;
+        const teams = appData.global_teams;
+        if(!teams.length) {
+            list.innerHTML = "<p style='color:#888;'>Nenhum time cadastrado ainda.</p>";
+        } else {
+            list.innerHTML = teams.map(t => {
+                const filled = t.players.filter(p => (p.name||'').trim()).length;
+                return `
+                <div class="elenco-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <strong style="color:var(--main); font-size:1.1rem;">${t.name}</strong>
+                        <small style="color:#888;">${filled}/11 jogadores preenchidos</small>
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="toggleElencoEdit('${t.id}')" style="min-width:auto; padding:6px 12px;">Editar Elenco</button>
+                            <button onclick="deleteGlobalTeam('${t.id}')" class="danger-btn" style="min-width:auto; padding:6px 12px;">Apagar</button>
+                        </div>
+                    </div>
+                    <div id="egEdit_${t.id}" style="display:none; margin-top:12px; border-top:1px dashed #555; padding-top:10px;">
+                        <input type="text" id="egEditName_${t.id}" value="${t.name.replace(/"/g,'&quot;')}" style="font-size:1rem; font-weight:bold;">
+                        <div class="roster-grid" id="egEditPlayers_${t.id}">
+                            ${t.players.map((p,i) => `
+                                <div>
+                                    <label style="font-size:0.7rem; color:var(--main);">${POSITIONS_DEF[i]}</label>
+                                    <input type="text" id="egEdit_${t.id}_p${i}" value="${(p.name||'').replace(/"/g,'&quot;')}" placeholder="Nome">
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="saveGlobalTeamEdit('${t.id}')" class="action-btn" style="background:#005f73; margin-top:8px;">Salvar</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Selects da transferência
+        const fromSel = document.getElementById('trFromTeam');
+        const toSel = document.getElementById('trToTeam');
+        if(fromSel && toSel) {
+            const opts = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            fromSel.innerHTML = '<option value="">--</option>' + opts;
+            toSel.innerHTML = '<option value="">--</option>' + opts;
+            trFillPlayers('from');
+            trFillPlayers('to');
+        }
+    }
+
+    function toggleElencoEdit(tid) {
+        const box = document.getElementById('egEdit_' + tid);
+        if(box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function saveGlobalTeamEdit(tid) {
+        const name = document.getElementById('egEditName_' + tid).value.trim();
+        const team = appData.global_teams.find(t => t.id === tid);
+        if(!team) return;
+        const players = team.players.map((p,i) => ({
+            name: document.getElementById(`egEdit_${tid}_p${i}`).value.trim(),
+            pos: POSITIONS_DEF[i]
+        }));
+        const res = await fetchAPI(`/api/global_teams/${tid}`, 'PUT', { name, players });
+        if(res.error) return alert(res.error);
+        alert('Time atualizado!');
+        await loadAll();
+        renderElencoGeral();
+    }
+
+    async function deleteGlobalTeam(tid) {
+        if(!confirm('Apagar este time do elenco geral?')) return;
+        const res = await fetchAPI(`/api/global_teams/${tid}`, 'DELETE');
+        if(res.error) return alert(res.error);
+        await loadAll();
+        renderElencoGeral();
+    }
+
+    function trFillPlayers(side) {
+        const teamSel = document.getElementById(side === 'from' ? 'trFromTeam' : 'trToTeam');
+        const idxSel = document.getElementById(side === 'from' ? 'trFromIdx' : 'trToIdx');
+        if(!teamSel || !idxSel) return;
+        const tid = teamSel.value;
+        const team = (appData.global_teams || []).find(t => t.id === tid);
+        if(!team) { idxSel.innerHTML = '<option value="">--</option>'; return; }
+        idxSel.innerHTML = team.players.map((p,i) =>
+            `<option value="${i}">${POSITIONS_DEF[i]} — ${p.name || '(vazio)'}</option>`
+        ).join('');
+    }
+
+    async function doTransferPlayer() {
+        const from_team_id = document.getElementById('trFromTeam').value;
+        const to_team_id = document.getElementById('trToTeam').value;
+        const from_index = document.getElementById('trFromIdx').value;
+        const to_index = document.getElementById('trToIdx').value;
+        if(!from_team_id || !to_team_id) return alert('Escolha os dois times.');
+        const res = await fetchAPI('/api/global_teams/transfer', 'POST', {
+            from_team_id, to_team_id, from_index: parseInt(from_index), to_index: parseInt(to_index)
+        });
+        if(res.error) return alert(res.error);
+        alert(res.message);
+        await loadAll();
+        renderElencoGeral();
+    }
+
+    // ============================================================
+    // ============== PAINEL JOGADOR ===============================
+    // ============================================================
+    let playerState = { id:null, username:null, player_name:null, team_name:null };
+    let pendingPostImage = null; // data URL
+
+    function showPlayerAuth() {
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('playerAuthScreen').style.display = 'flex';
+    }
+
+    function playerTab(tab) {
+        const isLogin = tab === 'login';
+        document.getElementById('playerLoginForm').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('playerRegisterForm').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('ptabLogin').style.background = isLogin ? 'var(--dark-main)' : '';
+        document.getElementById('ptabRegister').style.background = isLogin ? '' : 'var(--dark-main)';
+    }
+
+    async function doPlayerLogin() {
+        const username = document.getElementById('plUser').value.trim();
+        const password = document.getElementById('plPass').value;
+        if(!username || !password) return alert('Preencha usuário e senha.');
+        const res = await fetchAPI('/api/player/login', 'POST', { username, password });
+        if(res.error) return alert(res.error);
+        playerState = { ...res.player };
+        enterPlayerPanel();
+    }
+
+    async function doPlayerRegister() {
+        const player_name = document.getElementById('prPlayerName').value.trim();
+        const team_name = document.getElementById('prTeamName').value.trim();
+        const username = document.getElementById('prUser').value.trim();
+        const password = document.getElementById('prPass').value;
+        if(!player_name || !team_name || !username || !password) return alert('Preencha tudo.');
+        if(password.length < 4) return alert('Senha mínima 4 caracteres.');
+        const res = await fetchAPI('/api/player/register', 'POST', { username, password, player_name, team_name });
+        if(res.error) return alert(res.error);
+        playerState = { ...res.player };
+        enterPlayerPanel();
+    }
+
+    async function playerLogout() {
+        await fetchAPI('/api/player/logout', 'POST');
+        playerState = { id:null, username:null, player_name:null, team_name:null };
+        document.getElementById('playerApp').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'flex';
+        document.body.setAttribute('data-bg', '1');
+    }
+
+    function enterPlayerPanel() {
+        document.getElementById('playerAuthScreen').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('mainNav').style.display = 'none';
+        document.getElementById('playerApp').style.display = 'block';
+        document.body.setAttribute('data-bg', '3');
+        renderPlayerHeader();
+        pnav('pDesempenho');
+    }
+
+    function renderPlayerHeader() {
+        document.getElementById('pPlayerName').innerText = playerState.player_name || '';
+        document.getElementById('pTeamName').innerText = playerState.team_name || '';
+        document.getElementById('pUser').innerText = playerState.username || '';
+    }
+
+    async function openEditPlayerInfo() {
+        const newName = prompt('Novo nome de jogador:', playerState.player_name);
+        if(newName === null) return;
+        const newTeam = prompt('Novo nome do time:', playerState.team_name);
+        if(newTeam === null) return;
+        const res = await fetchAPI('/api/player/update', 'POST', { player_name: newName.trim(), team_name: newTeam.trim() });
+        if(res.error) return alert(res.error);
+        playerState.player_name = res.player_name;
+        playerState.team_name = res.team_name;
+        renderPlayerHeader();
+        if(document.getElementById('pDesempenho').classList.contains('active')) loadPerformance();
+    }
+
+    function pnav(id) {
+        document.querySelectorAll('#playerApp .psection').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        ['pnavDesempenho', 'pnavHSocial'].forEach(n => document.getElementById(n).style.background = '');
+        document.getElementById(id === 'pDesempenho' ? 'pnavDesempenho' : 'pnavHSocial').style.background = '#3a005f';
+        if(id === 'pDesempenho') loadPerformance();
+        if(id === 'pHSocial') loadHSocial();
+    }
+
+    async function loadPerformance() {
+        const sumDiv = document.getElementById('pPerfSummary');
+        const tDiv = document.getElementById('pPerfTournaments');
+        sumDiv.innerHTML = '<p style="color:#888;">Carregando...</p>';
+        tDiv.innerHTML = '';
+        const res = await fetchAPI('/api/player/performance');
+        if(res.error) { sumDiv.innerHTML = `<p style="color:#ff003c;">${res.error}</p>`; return; }
+        const s = res.summary;
+        sumDiv.innerHTML = `
+            <div class="perf-card">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                    <strong style="color:var(--main); font-size:1.05rem;">${res.player.player_name}</strong>
+                    <span style="color:#aaa;">Time: <strong style="color:#fff;">${res.player.team_name}</strong></span>
+                </div>
+                <div class="perf-grid">
+                    <div class="perf-cell"><strong>${s.matches_played}</strong><small>Partidas com nota</small></div>
+                    <div class="perf-cell"><strong>${s.goals}</strong><small>Gols ⚽️</small></div>
+                    <div class="perf-cell"><strong>${s.assists}</strong><small>Assist 🎯</small></div>
+                    <div class="perf-cell"><strong>${s.rating_avg !== null ? s.rating_avg.toFixed(2) : '—'}</strong><small>Nota Média 📊</small></div>
+                    <div class="perf-cell"><strong>${s.motm_count}</strong><small>Craque 🌟</small></div>
+                    <div class="perf-cell"><strong>${s.yellows}</strong><small>Amarelos 🟨</small></div>
+                    <div class="perf-cell"><strong>${s.reds}</strong><small>Vermelhos 🟥</small></div>
+                    <div class="perf-cell"><strong>${s.injuries}</strong><small>Lesões 🏥</small></div>
+                    <div class="perf-cell"><strong>${s.champs_played}</strong><small>Camp. disputados</small></div>
+                    <div class="perf-cell"><strong>${s.champs_won} 🏆</strong><small>Camp. vencidos</small></div>
+                </div>
+            </div>`;
+
+        if(!res.tournaments.length) {
+            tDiv.innerHTML = '<p style="color:#888;">Você ainda não está em nenhum campeonato. Peça pro admin te inscrever no time correspondente.</p>';
+            return;
+        }
+        tDiv.innerHTML = res.tournaments.map(t => `
+            <div class="perf-card">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                    <div>
+                        <strong style="color:var(--main); font-size:1rem;">${t.camp_name}</strong>
+                        <div style="font-size:0.75rem; color:#aaa;">${(FORMAT_LABELS[t.format] || t.format)} · ${phaseLabel(t.phase)}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <small style="color:#aaa;">Time: ${t.team || '—'} · ${t.pos || ''}</small>
+                        ${t.finished ? `<br><small style="color:${t.won ? 'gold' : '#888'};">${t.won ? '🏆 Campeão!' : 'Campeão: ' + (t.champion || '—')}</small>` : ''}
+                    </div>
+                </div>
+                <div class="perf-grid">
+                    <div class="perf-cell"><strong>${t.matches_played}</strong><small>Jogos</small></div>
+                    <div class="perf-cell"><strong>${t.goals}</strong><small>Gols</small></div>
+                    <div class="perf-cell"><strong>${t.assists}</strong><small>Assist</small></div>
+                    <div class="perf-cell"><strong>${t.rating_avg !== null ? t.rating_avg.toFixed(2) : '—'}</strong><small>Nota</small></div>
+                    <div class="perf-cell"><strong>${t.motm_count}</strong><small>🌟</small></div>
+                    <div class="perf-cell"><strong>${t.yellows}/${t.reds}</strong><small>🟨/🟥</small></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ============================================================
+    // ============== HSOCIAL ======================================
+    // ============================================================
+    function onPostImageSelected() {
+        const inp = document.getElementById('pPostImage');
+        const file = inp.files && inp.files[0];
+        if(!file) { clearPostImage(); return; }
+        if(file.size > 5 * 1024 * 1024) {
+            alert('Imagem muito grande (máx 5 MB).');
+            inp.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+            pendingPostImage = e.target.result;
+            document.getElementById('pPostImgPreview').innerHTML =
+                `<img src="${pendingPostImage}" style="max-width:200px; max-height:160px; border-radius:6px;">`;
+            document.getElementById('pPostImgClear').style.display = '';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearPostImage() {
+        pendingPostImage = null;
+        document.getElementById('pPostImage').value = '';
+        document.getElementById('pPostImgPreview').innerHTML = '';
+        document.getElementById('pPostImgClear').style.display = 'none';
+    }
+
+    async function submitPost() {
+        const text = document.getElementById('pPostText').value.trim();
+        if(!text && !pendingPostImage) return alert('Escreva algo ou anexe uma imagem.');
+        const body = { text };
+        if(pendingPostImage) body.image = pendingPostImage;
+        const res = await fetchAPI('/api/hsocial/posts', 'POST', body);
+        if(res.error) return alert(res.error);
+        document.getElementById('pPostText').value = '';
+        clearPostImage();
+        loadHSocial();
+    }
+
+    function renderPostsInto(targetId, posts, allowDelete) {
+        const div = document.getElementById(targetId);
+        if(!posts.length) {
+            div.innerHTML = '<p style="color:#888; text-align:center;">Sem posts ainda.</p>';
+            return;
+        }
+        div.innerHTML = posts.map(p => {
+            const dt = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR') : '';
+            const canDel = allowDelete && playerState.id && p.player_id === playerState.id;
+            return `
+                <div class="hpost">
+                    <div class="hpost-head">
+                        <div>
+                            <span class="hpost-author">${p.player_name}</span>
+                            <span class="hpost-team">· ${p.team_name}</span>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="hpost-time">${dt}</span>
+                            ${canDel ? `<button onclick="deletePost(${p.id})" style="background:transparent; border:1px solid #ff003c; color:#ff003c; min-width:auto; padding:3px 8px; font-size:0.7rem;">Apagar</button>` : ''}
+                        </div>
+                    </div>
+                    ${p.text ? `<div style="white-space:pre-wrap; color:#e0e0e0;">${escapeHtml(p.text)}</div>` : ''}
+                    ${p.image ? `<img src="${p.image}" alt="">` : ''}
+                </div>`;
+        }).join('');
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function loadHSocial() {
+        const res = await fetchAPI('/api/hsocial/posts');
+        renderPostsInto('pPostsFeed', res.posts || [], true);
+    }
+
+    async function deletePost(id) {
+        if(!confirm('Apagar esse post?')) return;
+        const res = await fetchAPI(`/api/hsocial/posts/${id}`, 'DELETE');
+        if(res.error) return alert(res.error);
+        loadHSocial();
+        if(document.getElementById('hsocialPublic').style.display === 'block') loadPublicHSocial();
+    }
+
+    // --- HSocial público (qualquer um da chooseScreen) ---
+    async function openPublicHSocial() {
+        document.getElementById('chooseScreen').style.display = 'none';
+        document.getElementById('hsocialPublic').style.display = 'block';
+        document.body.setAttribute('data-bg', '4');
+        loadPublicHSocial();
+    }
+
+    function closePublicHSocial() {
+        document.getElementById('hsocialPublic').style.display = 'none';
+        document.getElementById('chooseScreen').style.display = 'flex';
+        document.body.setAttribute('data-bg', '1');
+    }
+
+    async function loadPublicHSocial() {
+        const res = await fetchAPI('/api/hsocial/posts');
+        renderPostsInto('publicPostsFeed', res.posts || [], false);
+    }
+
+    window.onload = initUI;
+</script>  
+</body>  
+</html>
